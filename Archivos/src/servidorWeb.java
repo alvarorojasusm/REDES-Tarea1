@@ -5,7 +5,7 @@ import java.util.*;
 public class servidorWeb
 {
 	int puerto = 6666;
-		
+	
 	// Inicio de ejecucion
 	public static void main(String [] array)	
 	{
@@ -72,7 +72,7 @@ class request extends Thread
 			BufferedReader in = new BufferedReader (new InputStreamReader(scliente.getInputStream()));
 			
 			// Flujo de salida desde el servidor al cliente
-  			out = new PrintWriter(new OutputStreamWriter(scliente.getOutputStream(),"8859_1"),true) ;
+  			out = new PrintWriter(new OutputStreamWriter(scliente.getOutputStream(),"8859_1"),true);
   			
   			// Aca se guarda lo que se lee
   			String cadLeida = "";
@@ -81,8 +81,8 @@ class request extends Thread
 			int i = 0, leiTodo = 0;
 	
 			// Lee una linea mientras no este vacia y su largo sea diferente de cero
-			//do			
-			while(leiTodo == 0){
+			do{			
+			//while(/*leiTodo == 0*/true){
 				// Lee una linea
 				cadLeida = in.readLine();
 
@@ -90,12 +90,6 @@ class request extends Thread
 				if(cadLeida != null)
 				{
 					System.out.println(currentThread().toString() + " - " + "--" + cadLeida + "-");
-					
-					// Aca se toma lo ingresado por el usuario y se guarda en strings para uso posterior
-					if(cadLeida.contains("nombre"))
-					{
-						// Llegamos a la parte de nombre, podriamos guardar aca el nombre ingresado
-					}
 				}
 
 				// Hace esto solo para la primera linea que se lee; la que tiene el request url
@@ -121,9 +115,60 @@ class request extends Thread
                     	if((stp.countTokens() >= 2) && stp.nextToken().equals("POST"))
                     	{
                     		// Aca deberiamos mandar los datos obtenidos a una funcion que retorne la pagina con la lista
-                        	System.out.println("tetafatfatftdsbsgfgdfgggggggggggggggggggggggggggg");
+                        	// System.out.println("tetafatfatftdsbsgfgdfgggggggggggggggggggggggggggg");
+                        	
+                        	String nombre = "", ip = "", puerto = "", sigueLeyendo = "";
+                        	int veces = 0;
+                        	
+                        	try
+                        	{
+                        		// Se seguira leyendo la peticion hasta terminar de tomar los datos que se ingresaron
+                        		while(true)
+                        		{
+                        			sigueLeyendo = in.readLine();
+                        			System.out.println(currentThread().toString() + " - " + "--" + sigueLeyendo + "-");
+                        			
+                        			if(sigueLeyendo.length() == 0)
+                        			{
+                        				// Linea por linea tomando los datos ingresados, segun lo dado por enctype="multipart/form-data" 
+                        				
+                        				veces++;
+                        				
+                        				if(veces == 2)
+                        				{
+                        					nombre = in.readLine();
+                        					System.out.println(currentThread().toString() + " - " + "--" + nombre + "-");
+                        				}                        				
+                        				
+                        				else if(veces == 3)
+                        				{
+                        					ip = in.readLine();
+                        					System.out.println(currentThread().toString() + " - " + "--" + ip + "-");
+                        				}
+                        				
+                        				else if(veces == 4)
+                        				{
+                        					//System.out.println("estoy too moqueao");
+                        					puerto = in.readLine();
+                        					System.out.println(currentThread().toString() + " - " + "--" + puerto + "-");
+                        					break;
+                        				}
+                        			}
+                        		}
+                        		
+                        		// Mandamos a guardar lo que se ha leido
+                        		guardarDatosArchivo(nombre, ip, puerto);
+                        		
+                        		// Aqui se envian los datos obtenidos a una funcion que los escribe en un .txt                        		
+                        		leerDatosArchivoYDevolver(out);
+                        	}
+                        	catch(Exception exc)
+                        	{
+                        		System.out.println(currentThread().toString() + " - " + "Error: " + exc.toString());
+                        	}
                         }
-                    	else{
+                    	else
+                    	{
                     		// Si es que no es GET o POST
                     		out.println("400: Solicitud Incorrecta");
                     	}
@@ -132,20 +177,23 @@ class request extends Thread
 				
 				if(cadLeida == null)
 				{
-					leiTodo = 1;
+					//leiTodo = 1;
 					System.out.println(cadLeida + " nyanyanyanyanyanya");
+					break;
 					// Falta matar el thread
 					//currentThread().interrupt();
 				}
 			}
-			//while (cadLeida != null && cadLeida.length() != 0);
-
+			while (cadLeida != null && cadLeida.length() != 0);
 		}
 		catch(Exception e)
 		{
 			System.out.println(currentThread().toString() + " - " + "Error en servidor: " + e.toString());
 		}
-			
+		
+		// Aqui se envian los datos obtenidos a una funcion que los escribe en un .txt
+		// leerDatosArchivoYDevolver();
+		
 		System.out.println(currentThread().toString() + " - " + "Fin de la ejecucion");
 	}
 	
@@ -163,58 +211,152 @@ class request extends Thread
         // Si la cadena esta vacia, no retorna el HTML de ese directorio
         if (strArchivo.endsWith("/") || strArchivo.equals(""))
         {
-        	strArchivo = strArchivo + "index.htm" ;
+        	strArchivo = strArchivo + "agregar.html";
         }
         
-        try
-        {	        
-		    // Lectura y retorno del archivo
-		    File archPedido = new File(strArchivo);
-		        
-		    // Si existe el archivo que se pidio
-		    if (archPedido.exists()) 
-		    {
-		    	// Imprime datos de respuesta
-	      		out.println("HTTP/1.0 200 ok");
-				out.println("Server: ServidorWeb/1.0");
-				out.println("Date: " + new Date());
-				out.println("Content-Type: text/html");
-				out.println("Content-Length: " + archPedido.length());
-				out.println("\n");
-				
-				// El lector se asocia al archivo que se pidio
-				BufferedReader archLocal = new BufferedReader(new FileReader(archPedido));
-				
-				String linea = "";
-				
-				do			
-				{
-					linea = archLocal.readLine();
-	
-					if (linea != null )
+        if(strArchivo.equals("lista_contactos.html"))
+        {
+        	//System.out.println("kelklkeodkoekoke");
+        	
+        	try
+            {	        
+        		leerDatosArchivoYDevolver(out);
+    		}
+    		catch(Exception e)
+    		{
+    			System.out.println(currentThread().toString() + " - " + "Error al retornar el archivo");
+    		}
+        }
+        
+        else{
+	        try
+	        {	        
+			    // Lectura y retorno del archivo
+			    File archPedido = new File(strArchivo);
+			        
+			    // Si existe el archivo que se pidio
+			    if (archPedido.exists()) 
+			    {
+			    	// Imprime datos de respuesta
+		      		out.println("HTTP/1.0 200 ok");
+					out.println("Server: ServidorWeb/1.0");
+					out.println("Date: " + new Date());
+					out.println("Content-Type: text/html");
+					out.println("Content-Length: " + archPedido.length());
+					out.println("\n");
+					
+					// El lector se asocia al archivo que se pidio
+					BufferedReader archLocal = new BufferedReader(new FileReader(archPedido));
+					
+					String linea = "";
+					
+					do			
 					{
-						out.println(linea);
+						linea = archLocal.readLine();
+		
+						if (linea != null )
+						{
+							out.println(linea);
+						}
 					}
+					while (linea != null);
+					
+					// Asi termina si existe el archivo
+					System.out.println(currentThread().toString() + " - " + "Envio del archivo finalizado");
+					
+					archLocal.close();
+					out.close();
+			    } 
+				else
+				{
+					// Asi termina si no encuentra el archivo
+					System.out.println(currentThread().toString() + " - " + "No se encuentra el archivo: " + archPedido.toString());
+		      		out.println("HTTP/1.0 400 ok");
+		      		out.close();
 				}
-				while (linea != null);
-				
-				System.out.println(currentThread().toString() + " - " + "Envio del archivo finalizado");
-				
-				archLocal.close();
-				out.close();
-				
-			} // Finalizacion si es que existe el archivo 
-			else
+			}
+			catch(Exception e)
 			{
-				System.out.println(currentThread().toString() + " - " + "No se encuentra el archivo: " + archPedido.toString());
-	      		out.println("HTTP/1.0 400 ok");
-	      		out.close();
-			} // Finalizacion de no encontrarse el archivo
-			
-		}
-		catch(Exception e)
+				System.out.println(currentThread().toString() + " - " + "Error al retornar el archivo");
+			}
+        }
+	}
+	
+	void guardarDatosArchivo(String nombre, String ip, String puerto)
+	{
+		try
 		{
-			System.out.println(currentThread().toString() + " - " + "Error al retornar el archivo");
+			// Se crea el .txt con la lista de contactos
+			File listaContactos = new File("lista_contactos.txt");
+			
+			// El (..., true) es para que se agregue lo leido al final del archivo -append-)
+			BufferedWriter escritor = new BufferedWriter(new FileWriter(listaContactos, true));
+			
+			// Escribo en el archivo nuevo dado el siguiente formato
+			escritor.write(nombre + "," + ip + "," + puerto);
+			escritor.newLine();
+			
+			// Cierro escritor
+			escritor.close();
+		}
+		catch(IOException ioe)
+		{
+			System.out.println(ioe.toString());
+		}
+	}
+	
+	void leerDatosArchivoYDevolver(PrintWriter out)
+	{
+		// En este string va el contenido completo del archivo que contiene la lista
+		String contenido = "", nombre, ip, puerto;
+		
+		// Defino el archivo que voy a abrir
+		File archivo = new File("lista_contactos.txt");
+		
+		try
+		{
+			// Lector para el archivo
+			FileReader lector = new FileReader(archivo);
+			BufferedReader buf = new BufferedReader(lector);
+			
+			out.println("HTTP/1.1 200 OK");
+		    out.println("Content-Type: text/html");
+		    out.println("\r\n");
+		    out.println("<html><head><title>AVIONCITO DE PAPEL</title><style>body{font-family: Tahoma, Geneva, sans-serif;}</style></head><body><h1><center>AVIONCITO DE PAPEL</center></h1><fieldset>");
+		    out.println("<center><table>");
+		    out.println("<tr><th> NOMBRE </th><th> IP </th><th> PUERTO </th></tr>");
+			
+			while((contenido = buf.readLine()) != null)
+			{
+				StringTokenizer strtok = new StringTokenizer(contenido,",");
+				while(strtok.hasMoreTokens())
+				{
+					nombre = strtok.nextToken();
+					ip = strtok.nextToken();
+					puerto = strtok.nextToken();
+					
+					// Seguimos imprimiendo la pagina
+					out.println("<tr><td>" + nombre + "</td><td>" + ip + "</td><td>" + puerto + "</td></tr>");
+				}
+			}
+			/*
+			// Defino un nuevo arreglo de caracteres de largo igual al largo del archivo 
+			char[] caracteres = new char[(int)archivo.length()];
+			
+			// Leo el contenido...
+			lector.read(caracteres);
+			
+			// ...y lo guardo en un string
+			contenido = new String(caracteres); */
+			
+		    out.println("</table></center></fieldset></body></html>");
+			
+			// Cierra lector
+			lector.close();
+		}
+		catch(IOException ioexc)
+		{
+			System.out.println(ioexc.toString());
 		}
 	}
 }
