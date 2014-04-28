@@ -178,7 +178,7 @@ class request extends Thread
 				if(cadLeida == null)
 				{
 					//leiTodo = 1;
-					System.out.println(cadLeida + " nyanyanyanyanyanya");
+					//System.out.println(cadLeida + " nyanyanyanyanyanya");
 					break;
 					// Falta matar el thread
 					//currentThread().interrupt();
